@@ -32,6 +32,14 @@ class MQTTHandler:
         self._connection_thread: Optional[Thread] = None
         self._is_started = False
 
+        # Store the FastAPI app's event loop for proper coroutine execution
+        self._app_loop = None
+
+    def set_event_loop(self, loop):
+        """Set the FastAPI app's event loop for proper coroutine execution"""
+        self._app_loop = loop
+        self.logger.info("Event loop set for MQTT handler")
+
     def _on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             self.logger.info(f"Connected to MQTT Broker at {self.broker}:{self.port}")
@@ -50,28 +58,26 @@ class MQTTHandler:
         # Special handling for sensor data topic
         if topic == "sensors/data":
             self.logger.info("Processing sensor data message")
-            processed_data = process_sensor_message(payload, self.logger)
 
-            # Store the processed data for WebSocket broadcasting
+            # Direct processing for immediate action
+            processed_data = process_sensor_message(payload, self.logger)
             if processed_data:
+                # Import here to avoid circular import
                 from main import set_latest_sensor_data, manager
 
+                # Set the latest sensor data
                 set_latest_sensor_data(processed_data)
 
-                # Create a task to broadcast the data to all connected clients
-                try:
-                    # Get event loop or create a new one
-                    try:
-                        loop = asyncio.get_event_loop()
-                    except RuntimeError:
-                        loop = asyncio.new_event_loop()
-                        asyncio.set_event_loop(loop)
-
-                    # Create a task to broadcast the data
-                    loop.create_task(manager.broadcast(processed_data))
-                    self.logger.info("Scheduled WebSocket broadcast of new sensor data")
-                except Exception as e:
-                    self.logger.error(f"Error scheduling WebSocket broadcast: {str(e)}")
+                # Ensure we have an event loop and schedule the broadcast
+                if self._app_loop and self._app_loop.is_running():
+                    asyncio.run_coroutine_threadsafe(
+                        manager.broadcast(processed_data), self._app_loop
+                    )
+                    self.logger.info(
+                        "WebSocket broadcast scheduled via run_coroutine_threadsafe"
+                    )
+                else:
+                    self.logger.error("No event loop available for WebSocket broadcast")
 
         # Call any registered handlers for this topic
         if topic in self.subscriptions and self.subscriptions[topic]:

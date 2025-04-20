@@ -3,16 +3,7 @@ import logging
 import mysql.connector
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional
-
-
-def get_db_config():
-    return {
-        "host": "localhost",  # Connect to the exposed Docker port on localhost
-        "user": "root",
-        "password": "secret",
-        "database": "Sensor",
-        "port": 3306,  # Explicitly set the port
-    }
+from db_config import get_db_config
 
 
 def get_logger() -> logging.Logger:
@@ -150,7 +141,6 @@ def process_sensor_message(payload: str, logger: Optional[logging.Logger] = None
     logger = logger or get_logger()
     logger.info(f"RECEIVED PAYLOAD: {payload}")
 
-    test_db_connection(logger)  # Test DB connection
     # Database connection configuration
     db_config = get_db_config()
 

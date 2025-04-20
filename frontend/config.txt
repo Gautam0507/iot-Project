@@ -1,0 +1,10 @@
+Database Configuration Values for Future Reference:
+
+MySQL Root Password: rootPassword123!
+Database Name: fastapi_db
+Application User: fastapi_user
+Application Password: fastApi_Pass456!
+Container Name: mysql_container
+MySQL Port: 3306
+Host Port: 3306
+Network Name: app_network

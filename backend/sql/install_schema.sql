@@ -1,7 +1,7 @@
 -- install_schema.sql
 -- Create database if it doesn't exist
-CREATE DATABASE IF NOT EXISTS Sensor;
-USE Sensor;
+CREATE DATABASE IF NOT EXISTS fastapi_db;
+USE fastapi_db;
 
 -- Create sensors table
 CREATE TABLE IF NOT EXISTS sensors (
