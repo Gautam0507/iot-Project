@@ -17,9 +17,9 @@ export const sensorMetadata = {
   4: { name: "Relay Status", type: "relay", unit: "" },
 };
 
-// API URL configuration
-const API_BASE_URL = "http://localhost:8000";
-const WEBSOCKET_URL = "ws://localhost:8000/ws";
+// API URL configuration - use relative paths for production
+const API_BASE_URL = ""; // Empty for relative paths
+const WEBSOCKET_URL = `ws://${window.location.host}/ws`;
 let websocket = null;
 
 // Function to fetch initial data from the API

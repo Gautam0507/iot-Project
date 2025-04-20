@@ -7,8 +7,10 @@ from fastapi import (
     HTTPException,
     WebSocket,
     WebSocketDisconnect,
+    Request,
 )
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles  # Import for serving static files
 
 from mqtt_client import MQTTHandler
 from sensor_data_access import (
@@ -24,6 +26,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict, Any, List, Optional
 import uvicorn
 from datetime import datetime
+import os
+from pathlib import Path
 
 # Configure logging
 logging.basicConfig(
@@ -31,6 +35,9 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger("app")
+
+# Define the static files directory
+STATIC_DIR = Path(__file__).parent.parent / "frontend" / "dist"
 
 # Create FastAPI app
 app = FastAPI(title="MQTT Listener")
@@ -42,19 +49,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# MQTT Configuration
 
-MQTT_BROKER = "192.168.62.88"  # Changed from "localhost"
+# Mount the static files directory
+app.mount("/assets", StaticFiles(directory=f"{STATIC_DIR}/assets"), name="assets")
+
+# MQTT Configuration
+MQTT_BROKER = "192.168.62.88"
 MQTT_PORT = 1883
 MQTT_TOPIC = "sensor/data"
-SENSOR_DATA_TOPIC = "sensors/data"  # Topic for sensor data
+SENSOR_DATA_TOPIC = "sensors/data"
 
 # Create connection manager for WebSockets
 manager = ConnectionManager()
 
 # Global variable to store latest sensor data
 latest_sensor_data: Optional[Dict[str, Any]] = None
-latest_sensor_data_lock = asyncio.Lock()  # For thread safety
+latest_sensor_data_lock = asyncio.Lock()
 
 # Create MQTT client - will be initialized in startup event
 mqtt_handler = None
@@ -67,6 +77,8 @@ last_motor_state = None
 
 # Function to handle temperature-based motor control
 async def handle_temperature_based_control(temperature, current_motor_state):
+    # Existing code remains unchanged
+    # ...
     global motor_started_by_temperature, last_temperature_reading, last_motor_state
 
     # Update tracking variables
@@ -168,6 +180,8 @@ def set_latest_sensor_data(data: Dict[str, Any]):
 # Setup startup and shutdown events
 @app.on_event("startup")
 async def startup_event():
+    # Existing code remains unchanged
+    # ...
     global mqtt_handler
     # Get the current event loop
     loop = asyncio.get_running_loop()
@@ -207,14 +221,53 @@ def verify_mqtt_connection():
     return True
 
 
-# Basic routes
-@app.get("/")
-async def read_root():
-    return {"message": "MQTT listener running. Check server logs for MQTT messages."}
+# Serve the SPA frontend
+@app.get("/", response_class=HTMLResponse)
+async def serve_spa():
+    """Serves the Single Page Application"""
+    index_path = STATIC_DIR / "index.html"
+    if not index_path.exists():
+        return HTMLResponse(
+            content="Frontend not built. Run 'npm run build' in the frontend directory.",
+            status_code=500,
+        )
+
+    with open(index_path) as f:
+        return HTMLResponse(content=f.read())
 
 
+# Catch-all route for SPA routing
+@app.get("/{full_path:path}")
+async def serve_spa_paths(full_path: str, request: Request):
+    """
+    Catch-all route handler to support SPA routing
+    Serves the index.html for all paths except API routes
+    """
+    # Check if we're trying to access an API route
+    if full_path.startswith("api/") or full_path == "ws":
+        raise HTTPException(status_code=404, detail="Not found")
+
+    # Check if the path is a static file
+    static_file = STATIC_DIR / full_path
+    if static_file.exists() and static_file.is_file():
+        return FileResponse(static_file)
+
+    # Otherwise, return the index.html for client-side routing
+    index_path = STATIC_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path)
+    else:
+        return HTMLResponse(
+            content="Frontend not built. Run 'npm run build' in the frontend directory.",
+            status_code=500,
+        )
+
+
+# API routes
 @app.get("/status")
 async def get_mqtt_status():
+    # Keep the existing implementation
+    # ...
     return {
         "status": (
             "connected"
