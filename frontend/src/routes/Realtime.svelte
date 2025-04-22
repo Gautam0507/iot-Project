@@ -167,7 +167,7 @@
         <!-- Insert power row right after current sensor (id 1) -->
         {#if id === '1'}
           <tr>
-            <td class="py-2 px-4 border-b font-medium">Power</td>
+            <td class="py-2 px-4 border-b">Power</td>
             <td class="py-2 px-4 border-b">
               {#if calculatedPower !== null}
                 {calculatedPower.toFixed(2)}
