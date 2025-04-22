@@ -221,7 +221,7 @@ def verify_mqtt_connection():
     return True
 
 
-# Serve the SPA frontend
+# Serve the SPA frontend ONLY at the root
 @app.get("/", response_class=HTMLResponse)
 async def serve_spa():
     """Serves the Single Page Application"""
@@ -234,33 +234,6 @@ async def serve_spa():
 
     with open(index_path) as f:
         return HTMLResponse(content=f.read())
-
-
-# Catch-all route for SPA routing
-@app.get("/{full_path:path}")
-async def serve_spa_paths(full_path: str, request: Request):
-    """
-    Catch-all route handler to support SPA routing
-    Serves the index.html for all paths except API routes
-    """
-    # Check if we're trying to access an API route
-    if full_path.startswith("api/") or full_path == "ws":
-        raise HTTPException(status_code=404, detail="Not found")
-
-    # Check if the path is a static file
-    static_file = STATIC_DIR / full_path
-    if static_file.exists() and static_file.is_file():
-        return FileResponse(static_file)
-
-    # Otherwise, return the index.html for client-side routing
-    index_path = STATIC_DIR / "index.html"
-    if index_path.exists():
-        return FileResponse(index_path)
-    else:
-        return HTMLResponse(
-            content="Frontend not built. Run 'npm run build' in the frontend directory.",
-            status_code=500,
-        )
 
 
 # API routes
@@ -342,7 +315,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
     # Set up heartbeat timeout detection
     last_heartbeat = asyncio.get_running_loop().time()
-    heartbeat_timeout = 120  # seconds to wait for heartbeat before closing connection
+    heartbeat_timeout = (
+        300  # 5 minutes (300 seconds) to wait for heartbeat before closing connection
+    )
 
     try:
         while True:

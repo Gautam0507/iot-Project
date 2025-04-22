@@ -9,9 +9,18 @@
     4: null  // Relay Status
   };
   
+  let calculatedPower = null;
   let lastUpdateTime = null;
   let unsubscribe;
   let isButtonDisabled = false;
+  
+  // Calculate power (P = V * I) with voltage fixed at 12V
+  function calculatePower() {
+    if (currentData[1] && currentData[1].value) {
+      return currentData[1].value * 12; // P = 12V * I
+    }
+    return null;
+  }
   
   onMount(async () => {
     // Fetch initial data if not already loaded
@@ -34,6 +43,9 @@
           }
         }
       });
+      
+      // Calculate power whenever currentData is updated
+      calculatedPower = calculatePower();
       
       // Force reactivity
       currentData = {...currentData};
@@ -146,6 +158,18 @@
               <td class="py-2 px-4 border-b">{sensor.unit}</td>
             </tr>
           {/each}
+          <!-- Power calculation row -->
+          <tr>
+            <td class="py-2 px-4 border-b font-medium">Power (12V)</td>
+            <td class="py-2 px-4 border-b">
+              {#if calculatedPower !== null}
+                {calculatedPower.toFixed(2)}
+              {:else}
+                N/A
+              {/if}
+            </td>
+            <td class="py-2 px-4 border-b">W</td>
+          </tr>
         </tbody>
       </table>
     </div>
