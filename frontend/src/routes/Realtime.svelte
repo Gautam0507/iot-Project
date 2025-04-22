@@ -22,10 +22,7 @@
     return null;
   }
   
-  onMount(async () => {
-    // Fetch initial data if not already loaded
-    await fetchInitialData();
-    
+  onMount(() => {
     // Subscribe to store updates
     unsubscribe = sensorData.subscribe(data => {
       // Get the latest value for each sensor
@@ -50,6 +47,15 @@
       // Force reactivity
       currentData = {...currentData};
     });
+    
+    // Then fetch data and establish WebSocket connection in the background
+    setTimeout(() => {
+      // Fetch initial data without blocking UI
+      fetchInitialData().catch(err => console.error('Error fetching initial data:', err));
+      
+      // Initialize WebSocket connection
+      initializeWebSocket();
+    }, 100);
   });
   
   onDestroy(() => {

@@ -1,16 +1,14 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { sensorData, sensorMetadata } from '../stores/sensorStore.js';
+  import { sensorData, sensorMetadata, fetchInitialData, initializeWebSocket } from '../stores/sensorStore.js';
   import Chart from 'chart.js/auto';
   
   let charts = {};
   let unsubscribe;
   
-  onMount(async () => {
-    // Create charts for each sensor
-    await fetchInitialData(); 
-
-    initializeWebSocket(); 
+  // Create empty charts first, then populate with data as it arrives
+  onMount(() => {
+    // First, create empty charts
     Object.keys(sensorMetadata).forEach(sensorId => {
       const ctx = document.getElementById(`sensor-${sensorId}-chart`).getContext('2d');
       const sensor = sensorMetadata[sensorId];
@@ -62,6 +60,16 @@
     unsubscribe = sensorData.subscribe(data => {
       updateCharts(data);
     });
+    
+    // Then fetch data and establish WebSocket connection in the background
+    // These will update the store, which will trigger the subscription
+    setTimeout(() => {
+      // Fetch initial data without blocking UI
+      fetchInitialData().catch(err => console.error('Error fetching initial data:', err));
+      
+      // Initialize WebSocket connection
+      initializeWebSocket();
+    }, 100);
   });
   
   onDestroy(() => {
