@@ -139,34 +139,35 @@
       </p>
     </div>
     
-    <div class="overflow-x-auto">
-      <table class="min-w-full bg-white">
-        <thead>
+<div class="overflow-x-auto">
+  <table class="min-w-full bg-white">
+    <thead>
+      <tr>
+        <th class="py-2 px-4 border-b">Sensor</th>
+        <th class="py-2 px-4 border-b">Value</th>
+        <th class="py-2 px-4 border-b">Unit</th>
+      </tr>
+    </thead>
+    <tbody>
+      {#each Object.entries(sensorMetadata) as [id, sensor]}
+        <tr class="{id == 2 && getCurrentTemperature() > 40 ? 'bg-red-50' : ''}">
+          <td class="py-2 px-4 border-b">{sensor.name}</td>
+          <td class="py-2 px-4 border-b">
+            {#if currentData[id]}
+              <span class="{id == 2 && getCurrentTemperature() > 40 ? 'text-red-600 font-semibold' : ''}">
+                {getFormattedValue(id, currentData[id].value)}
+              </span>
+            {:else}
+              N/A
+            {/if}
+          </td>
+          <td class="py-2 px-4 border-b">{sensor.unit}</td>
+        </tr>
+        
+        <!-- Insert power row right after current sensor (id 1) -->
+        {#if id === '1'}
           <tr>
-            <th class="py-2 px-4 border-b">Sensor</th>
-            <th class="py-2 px-4 border-b">Value</th>
-            <th class="py-2 px-4 border-b">Unit</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each Object.entries(sensorMetadata) as [id, sensor]}
-            <tr class="{id == 2 && getCurrentTemperature() > 40 ? 'bg-red-50' : ''}">
-              <td class="py-2 px-4 border-b">{sensor.name}</td>
-              <td class="py-2 px-4 border-b">
-                {#if currentData[id]}
-                  <span class="{id == 2 && getCurrentTemperature() > 40 ? 'text-red-600 font-semibold' : ''}">
-                    {getFormattedValue(id, currentData[id].value)}
-                  </span>
-                {:else}
-                  N/A
-                {/if}
-              </td>
-              <td class="py-2 px-4 border-b">{sensor.unit}</td>
-            </tr>
-          {/each}
-          <!-- Power calculation row -->
-          <tr>
-            <td class="py-2 px-4 border-b font-medium">Power (12V)</td>
+            <td class="py-2 px-4 border-b font-medium">Power</td>
             <td class="py-2 px-4 border-b">
               {#if calculatedPower !== null}
                 {calculatedPower.toFixed(2)}
@@ -176,10 +177,11 @@
             </td>
             <td class="py-2 px-4 border-b">W</td>
           </tr>
-        </tbody>
-      </table>
-    </div>
-    
+        {/if}
+      {/each}
+    </tbody>
+  </table>
+</div>
     <!-- Temperature Control Info Card -->
     <div class="mt-6 p-4 bg-gray-50 rounded-md border border-gray-200">
       <h5 class="text-md font-semibold mb-2">Automatic Temperature Control</h5>
