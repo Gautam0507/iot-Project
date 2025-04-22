@@ -6,8 +6,11 @@
   let charts = {};
   let unsubscribe;
   
-  onMount(() => {
+  onMount(async () => {
     // Create charts for each sensor
+    await fetchInitialData(); 
+
+    initializeWebSocket(); 
     Object.keys(sensorMetadata).forEach(sensorId => {
       const ctx = document.getElementById(`sensor-${sensorId}-chart`).getContext('2d');
       const sensor = sensorMetadata[sensorId];
